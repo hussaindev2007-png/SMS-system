@@ -1,0 +1,24 @@
+import Redis from 'ioredis';
+
+// ✅ Upstash Redis Connection with TLS
+const redis = new Redis({
+  host: process.env.REDIS_HOST || '0.0.0.0',
+  port: process.env.REDIS_PORT || 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
+  tls: process.env.REDIS_HOST ? {} : undefined,  // ✅ TLS for Upstash
+  maxRetriesPerRequest: null,
+  retryStrategy: (times) => {
+    const delay = Math.min(times * 50, 2000);
+    return delay;
+  }
+});
+
+redis.on('connect', () => {
+  console.log('✅ Redis connected successfully');
+});
+
+redis.on('error', (err) => {
+  console.error('❌ Redis error:', err.message);
+});
+
+export default redis;

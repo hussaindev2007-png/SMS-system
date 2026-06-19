@@ -1,0 +1,194 @@
+/* @import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+} */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* globals.css */
+@import "tailwindcss";
+
+/* --- THEME CONFIGURATION --- */
+@theme inline {
+  /* Background: Warm Cream/Yellow (No White/Gray) */
+  --color-background: #fffbeb; 
+  --color-foreground: #312e81; /* Deep Indigo Text */
+  
+  /* Custom Colors */
+  --color-primary: #4f46e5;    /* Indigo-600 */
+  --color-primary-hover: #4338ca; /* Indigo-700 */
+  --color-accent: #fbbf24;     /* Amber-400 Yellow */
+  --color-border: #c7d2fe;     /* Indigo-200 */
+  --color-card-bg: #ffffff;    
+  
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* --- CUSTOM CLASSES (Fixed for Tailwind v4 Build Error) --- */
+
+.app-container {
+  min-height: 100vh;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.content-wrapper {
+  width: 100%;
+  max-width: 50rem; /* approx 800px */
+  margin: 0 auto;
+}
+
+.header-title {
+  font-size: 2.25rem; /* text-4xl */
+  font-weight: 700;
+  color: #4f46e5; /* Indigo-600 */
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.header-subtitle {
+  text-align: center;
+  color: #4338ca; /* Indigo-700 */
+  opacity: 0.8;
+  margin-bottom: 2rem;
+  font-weight: 500;
+}
+
+.card-box {
+  background-color: white;
+  border: 4px solid #fde68a; /* Amber-200 */
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.input-field {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid #ddd6fe; /* Violet-200 */
+  background-color: #f5f3ff; /* Violet-50 */
+  color: #312e81;
+  font-weight: 600;
+  font-size: 1.125rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.input-field:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 4px #e0e7ff;
+}
+
+.btn-primary {
+  background-color: #4f46e5; /* Indigo-600 */
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  min-width: 160px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #4338ca; /* Indigo-700 */
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
+}
+
+.btn-primary:disabled {
+  background-color: #818cf8; /* Lighter Indigo */
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.list-header {
+  background-color: #4f46e5; /* Indigo-600 */
+  color: white;
+  padding: 1rem 1.5rem;
+  border-bottom: 4px solid #fbbf24; /* Amber-400 */
+  font-size: 1.25rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subject-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 2px solid #f3e8ff; /* Light Violet */
+  background-color: #faf5ff; /* Very Light Violet */
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+/* Hover effect for list items */
+.subject-item:hover {
+  background-color: #fffbeb; /* Light Yellow */
+  border-color: #fbbf24; /* Amber Border */
+}
+
+.subject-name {
+  font-weight: bold;
+  font-size: 1.125rem;
+  color: #312e81; /* Dark Indigo */
+  letter-spacing: 0.025em;
+}
