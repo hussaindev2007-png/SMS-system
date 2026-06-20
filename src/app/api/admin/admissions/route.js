@@ -1,4 +1,3 @@
-
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import Admission from "@/models/Admission";
