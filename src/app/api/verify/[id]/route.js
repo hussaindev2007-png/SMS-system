@@ -6,52 +6,64 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { sendAttendanceEmail } from "@/lib/email";
 
-// ✅ PAKISTAN TIME HELPER FUNCTION
-const getPakistanTime = () => {
+// ✅ PAKISTAN TIME HELPERS
+const getPakistanDateTime = () => {
+  // Pakistan is UTC+5
   const now = new Date();
-  // Pakistan UTC+5
-  const pakistanOffset = 5 * 60 * 60 * 1000; // 5 hours in milliseconds
-  const pakistanTime = new Date(now.getTime() + pakistanOffset);
+  const pakistanTime = new Date(now.getTime() + (5 * 60 * 60 * 1000)); // +5 hours
   return pakistanTime;
 };
 
-// ✅ PAKISTAN TIME FORMATTER
-const formatPakistanTime = (date) => {
-  return date.toLocaleTimeString('en-US', {
+const getPakistanTimeString = () => {
+  const now = new Date();
+  // Format directly to Pakistan time
+  return now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: true,
-    timeZone: 'Asia/Karachi'  // Pakistan timezone
+    timeZone: 'Asia/Karachi'
   });
 };
 
-// ✅ PAKISTAN DATE FORMATTER
-const formatPakistanDate = (date) => {
-  return date.toLocaleDateString('en-US', {
+const getPakistanDateString = () => {
+  const now = new Date();
+  return now.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-    timeZone: 'Asia/Karachi'  // Pakistan timezone
+    timeZone: 'Asia/Karachi'
   });
 };
 
-// ✅ UPDATED: Late/Absent check with Pakistan time
+// Get Pakistan hours for attendance check
+const getPakistanHours = () => {
+  const now = new Date();
+  const pakistanTimeString = now.toLocaleString('en-US', {
+    timeZone: 'Asia/Karachi',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  const [hours, minutes] = pakistanTimeString.split(':').map(Number);
+  return { hours, minutes, totalMinutes: hours * 60 + minutes };
+};
+
+// ✅ UPDATED: Attendance check with proper Pakistan time
 const checkAttendanceStatus = () => {
-  const now = getPakistanTime(); // Pakistan time
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const totalMinutes = hours * 60 + minutes;
+  const { totalMinutes } = getPakistanHours();
+  
+  console.log(`🕐 Pakistan Time Check: ${Math.floor(totalMinutes / 60)}:${totalMinutes % 60} (Total minutes: ${totalMinutes})`);
   
   const schoolStartMinutes = 8 * 60;      // 8:00 AM
-  const absentThreshold = 10 * 60;        // 10:00 AM - Iske baad ABSENT
+  const absentThreshold = 10 * 60;        // 10:00 AM
   
   if (totalMinutes >= absentThreshold) {
-    return 'absent';  // 10:00 AM ke baad → ABSENT
+    return 'absent';
   } else if (totalMinutes > schoolStartMinutes) {
-    return 'late';    // 8:01 AM - 9:59 AM → LATE
+    return 'late';
   }
-  return 'present';   // 8:00 AM ya pehle → PRESENT
+  return 'present';
 };
 
 export async function GET(request, { params }) {
@@ -108,19 +120,20 @@ export async function GET(request, { params }) {
     
     console.log("✅ ID Card found:", card.cardNumber);
 
-    // ✅ PAKISTAN TIME use karo
-    const pakistanNow = getPakistanTime();
-    const pakistanTimeFormatted = formatPakistanTime(pakistanNow);
-    const pakistanDateFormatted = formatPakistanDate(pakistanNow);
+    // ✅ Get Pakistan time
+    const pakistanTime = getPakistanTimeString();
+    const pakistanDate = getPakistanDateString();
+    const pakistanDateTime = getPakistanDateTime();
     
-    // Today's date in Pakistan timezone (start of day)
-    const todayStart = new Date(pakistanNow);
+    // Today's date in Pakistan timezone
+    const todayStart = new Date(pakistanDateTime);
     todayStart.setHours(0, 0, 0, 0);
     
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setDate(tomorrowStart.getDate() + 1);
     
-    console.log(`🕐 Pakistan Time: ${pakistanTimeFormatted} | ${pakistanDateFormatted}`);
+    console.log(`🕐 Pakistan Time: ${pakistanTime} | ${pakistanDate}`);
+    console.log(`📅 Query Range: ${todayStart.toISOString()} to ${tomorrowStart.toISOString()}`);
     
     // Check today's attendance
     const existingAttendance = await Attendance.findOne({
@@ -131,47 +144,43 @@ export async function GET(request, { params }) {
       }
     }).lean();
     
-    let attendanceRecord = null;
     let isAlreadyMarked = false;
     let attendanceStatus = 'present';
     
     // If no attendance today, mark it
     if (!existingAttendance) {
       try {
-        // ✅ Check attendance status with Pakistan time
         attendanceStatus = checkAttendanceStatus();
         
-        attendanceRecord = await Attendance.create({
+        const newAttendance = await Attendance.create({
           studentId: student._id,
           studentName: student.name,
           rollNo: student.rollNo,
-          date: pakistanNow,
+          date: pakistanDateTime,
           status: attendanceStatus,
-          checkInTime: pakistanTimeFormatted,  // Pakistan time
+          checkInTime: pakistanTime,
           markedBy: student._id,
           className: student.className,
           section: student.section,
           verifiedBy: 'QR Scan'
         });
         
-        console.log(`✅ Attendance marked for ${student.name}: ${attendanceStatus} at ${pakistanTimeFormatted}`);
+        console.log(`✅ Attendance marked: ${student.name} - ${attendanceStatus} at ${pakistanTime}`);
         
-        // ✅ Send email with Pakistan time
+        // Send email
         if (student.email) {
           sendAttendanceEmail(
             student.email,
             student.name,
             attendanceStatus,
-            attendanceStatus === 'absent' ? null : pakistanTimeFormatted,
-            pakistanDateFormatted
+            attendanceStatus === 'absent' ? null : pakistanTime,
+            pakistanDate
           ).then(result => {
             if (result.success) {
-              console.log(`📧 ${attendanceStatus.toUpperCase()} email sent to ${student.email}`);
-            } else {
-              console.error(`❌ Email failed:`, result.error);
+              console.log(`📧 Email sent to ${student.email}`);
             }
           }).catch(err => {
-            console.error("Email send error:", err);
+            console.error("Email error:", err);
           });
         }
         
@@ -179,32 +188,34 @@ export async function GET(request, { params }) {
         console.error("❌ Attendance marking failed:", attError);
         return NextResponse.json({ 
           success: false, 
-          error: "Failed to mark attendance. Please try again." 
+          error: "Failed to mark attendance" 
         }, { status: 500 });
       }
     } else {
       isAlreadyMarked = true;
       attendanceStatus = existingAttendance.status || "present";
-      console.log(`⚠️ Attendance already marked for ${student.name} (${attendanceStatus})`);
+      console.log(`⚠️ Already marked: ${student.name} (${attendanceStatus})`);
     }
 
     const isExpired = new Date(card.expiryDate) < new Date();
     
     const responseCheckInTime = isAlreadyMarked 
       ? existingAttendance.checkInTime 
-      : pakistanTimeFormatted;
+      : pakistanTime;
 
     return NextResponse.json({
       success: true,
       verified: true,
-      verifiedAt: pakistanNow.toISOString(),
-      timezone: 'Asia/Karachi (UTC+5)',
+      verifiedAt: new Date().toISOString(),
+      timezone: 'Asia/Karachi (PKT)',
+      serverTime: new Date().toISOString(),
+      pakistanTime: pakistanTime,
       attendance: {
         marked: !isAlreadyMarked,
         alreadyMarked: isAlreadyMarked,
         status: attendanceStatus,
         checkInTime: responseCheckInTime,
-        date: pakistanDateFormatted,
+        date: pakistanDate,
         isLate: attendanceStatus === 'late',
         isAbsent: attendanceStatus === 'absent'
       },
